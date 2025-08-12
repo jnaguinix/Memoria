@@ -426,7 +426,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updatePlayerSequenceDisplay() { 
         if (gameState.playerSequence.length > 0) {
-            elements.playerSequenceDisplay.textContent = gameState.playerSequence.join(' ');
+            // SOLUCIÓN: Se quita el espacio en el .join()
+            elements.playerSequenceDisplay.textContent = gameState.playerSequence.join('');
         } else {
             elements.playerSequenceDisplay.textContent = '...';
         }
