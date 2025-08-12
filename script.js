@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sequenceLength: 6,
         displayTime: 5000,
         inputTimerId: null,
+        oneByOneTimeoutId: null, // Para controlar el timer del modo Uno a Uno
         streak: 0,
         maxScore: 0,
         gameInProgress: false,
@@ -142,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetToPreGame() {
         clearTimeout(gameState.inputTimerId);
         clearInterval(oneByOneInterval);
+        clearTimeout(gameState.oneByOneTimeoutId); // Limpiar timer
         gameState.gameInProgress = false; 
         showView('pre-game');
         elements.gameArea.classList.remove('game-over');
@@ -210,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displaySequence() {
         clearInterval(oneByOneInterval);
+        clearTimeout(gameState.oneByOneTimeoutId); // Limpiar timer
         elements.inputArea.style.display = 'none';
         elements.sequenceDisplay.style.display = 'flex';
         elements.sequenceDisplay.innerHTML = '';
@@ -217,10 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.feedbackEl.className = 'feedback info';
         
         if (gameState.oneByOneMode) {
-            elements.timerContainer.style.display = 'none'; // Ocultar barra de tiempo
+            elements.timerContainer.style.display = 'none';
             displayOneByOne();
         } else {
-            elements.timerContainer.style.display = 'block'; // Mostrar barra de tiempo
+            elements.timerContainer.style.display = 'block';
             displayAllAtOnce();
             startTimer(gameState.displayTime);
             setTimeout(hideSequence, gameState.displayTime);
@@ -464,9 +467,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displayOneByOne() {
         let i = 0;
-        const intervalTime = 800; // Un tiempo fijo para mostrar cada número
+        const intervalTime = 800;
         
-        elements.sequenceDisplay.innerHTML = ''; // Limpiar al inicio
+        elements.sequenceDisplay.innerHTML = '';
 
         oneByOneInterval = setInterval(() => {
             if (!gameState.gameInProgress) {
@@ -489,8 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 i++;
             } else {
                 clearInterval(oneByOneInterval);
-                // Pasar a la fase de introducción después de un breve momento
-                setTimeout(hideSequence, intervalTime / 2);
+                gameState.oneByOneTimeoutId = setTimeout(hideSequence, intervalTime / 2);
             }
         }, intervalTime);
     }
