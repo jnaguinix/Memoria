@@ -194,8 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.feedbackEl.className = 'feedback';
         elements.feedbackEl.textContent = '';
         
-        gameState.sequenceLength = difficultySettings[gameState.difficulty].length + Math.floor(gameState.streak / 3);
-        gameState.displayTime = Math.max(1500, difficultySettings[gameState.difficulty].time - (gameState.streak * 100));
+        const extraNumbers = Math.floor(gameState.streak / 3);
+        gameState.sequenceLength = difficultySettings[gameState.difficulty].length + extraNumbers;
+        
+        const baseTime = difficultySettings[gameState.difficulty].time;
+        const timePerExtraNumber = 750;
+        gameState.displayTime = baseTime + (extraNumbers * timePerExtraNumber);
 
         generateSequence();
         displaySequence();
@@ -426,7 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updatePlayerSequenceDisplay() { 
         if (gameState.playerSequence.length > 0) {
-            // SOLUCIÓN: Se quita el espacio en el .join()
             elements.playerSequenceDisplay.textContent = gameState.playerSequence.join('');
         } else {
             elements.playerSequenceDisplay.textContent = '...';
@@ -457,26 +460,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayOneByOne() {
-        const sequenceHTML = gameState.currentSequence.map(num => {
-            const color = getRandomColor();
-            const numberColor = gameState.colorMode ? color : 'var(--text-color)';
-            return `
-                <div class="number-box" style="visibility: hidden;">
-                    <span style="color: ${numberColor};">${num}</span>
-                </div>
-            `;
-        }).join('');
-        elements.sequenceDisplay.innerHTML = sequenceHTML;
-
-        const boxes = elements.sequenceDisplay.querySelectorAll('.number-box');
         let i = 0;
         const intervalTime = Math.min(800, gameState.displayTime / gameState.sequenceLength);
         
+        elements.sequenceDisplay.innerHTML = ''; // Limpiar al inicio
+
         oneByOneInterval = setInterval(() => {
-            if (i < boxes.length) {
-                boxes[i].style.visibility = 'visible';
+            if (!gameState.gameInProgress) {
+                clearInterval(oneByOneInterval);
+                return;
+            }
+
+            if (i < gameState.currentSequence.length) {
+                const num = gameState.currentSequence[i];
+                const color = getRandomColor();
+                const numberColor = gameState.colorMode ? color : 'var(--text-color)';
+                
+                const sequenceHTML = `
+                    <div class="number-box">
+                        <span style="color: ${numberColor};">${num}</span>
+                    </div>
+                `;
+                elements.sequenceDisplay.innerHTML = sequenceHTML;
+                
                 i++;
             } else {
+                elements.sequenceDisplay.innerHTML = ''; // Limpiar al final
                 clearInterval(oneByOneInterval);
             }
         }, intervalTime);
