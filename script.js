@@ -55,6 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
         expert: { length: 15, time: 5000, inputTime: 30000 },
     };
     
+    // Función para actualizar el aspecto de los botones ON/OFF
+    function updateToggleButtonVisuals(button, isActive) {
+        button.textContent = isActive ? 'ON' : 'OFF';
+        button.classList.remove('on', 'off');
+        button.classList.add(isActive ? 'on' : 'off');
+    }
+
     function setupEventListeners() {
         elements.difficultyBtns.forEach(btn => btn.addEventListener('click', () => {
             if (gameState.gameInProgress) return;
@@ -63,12 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.difficulty = btn.dataset.value;
         }));
 
-        const setupToggleButton = (button, key) => button.addEventListener('click', () => {
-            if (gameState.gameInProgress) return;
-            gameState[key] = !gameState[key];
-            button.textContent = gameState[key] ? 'Activado' : 'Desactivado';
-            button.classList.toggle('active', gameState[key]);
-        });
+        const setupToggleButton = (button, key) => {
+            button.addEventListener('click', () => {
+                if (gameState.gameInProgress) return;
+                gameState[key] = !gameState[key];
+                updateToggleButtonVisuals(button, gameState[key]);
+            });
+        };
 
         setupToggleButton(elements.reverseModeBtn, 'reverseMode');
         setupToggleButton(elements.colorModeBtn, 'colorMode');
@@ -115,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (key === 'backspace') {
                 btn.innerHTML = '&#9003;';
                 btn.dataset.action = 'backspace';
-                btn.classList.add('action-btn');
             }
             elements.keypad.appendChild(btn);
         });
@@ -223,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function hideSequence() {
-        // CORRECCIÓN: Añadir guarda para evitar que se ejecute si el juego ha terminado.
         if (!gameState.gameInProgress) return;
 
         elements.displayArea.style.display = 'none';
@@ -238,10 +244,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleKeypadClick(e) {
-        if (!e.target.matches('button') || !gameState.gameInProgress) return;
+        const button = e.target.closest('button');
+        if (!button || !gameState.gameInProgress) return;
 
-        const key = e.target.dataset.key;
-        const action = e.target.dataset.action;
+        const key = button.dataset.key;
+        const action = button.dataset.action;
 
         if (key) {
             const num = parseInt(key, 10);
@@ -285,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.playerSequenceDisplay.style.backgroundColor = 'var(--success-color)';
         
         setTimeout(() => {
-            // CORRECCIÓN: Añadir guarda para evitar que se ejecute si el juego ha terminado.
             if (!gameState.gameInProgress) return;
             elements.playerSequenceDisplay.style.backgroundColor = 'var(--bg-color)';
             startGame();
@@ -309,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.feedbackEl.className = 'feedback error';
             
             setTimeout(() => {
-                // CORRECCIÓN: Añadir guarda para evitar que se ejecute si el juego ha terminado.
                 if (!gameState.gameInProgress) return;
                 gameState.playerSequence = [];
                 updatePlayerSequenceDisplay();
@@ -387,8 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateFullscreenButton() {
         const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
-        elements.fullscreenBtn.textContent = isFullscreen ? 'Salir' : 'Activar';
-        elements.fullscreenBtn.classList.toggle('active', isFullscreen);
+        updateToggleButtonVisuals(elements.fullscreenBtn, isFullscreen);
     }
 
     function saveMaxScore() {
@@ -462,6 +466,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
         loadMaxScore(); 
         resetToPreGame();
+
+        // Establecer el estado visual inicial de los botones
+        updateToggleButtonVisuals(elements.reverseModeBtn, gameState.reverseMode);
+        updateToggleButtonVisuals(elements.colorModeBtn, gameState.colorMode);
+        updateToggleButtonVisuals(elements.oneByOneModeBtn, gameState.oneByOneMode);
+        updateFullscreenButton();
     }
 
     initializeGame();

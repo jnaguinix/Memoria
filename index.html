@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego de Memoria Numérica</title>
+    <title>MemoNumero</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
 
     <link rel="stylesheet" href="styles.css">
@@ -15,9 +16,10 @@
 <body>
 
     <div class="game-container">
-        <h1 id="main-title">Memoria Numérica</h1>
+        <h1 id="main-title">MemoNumero</h1>
         <div id="settings-area">
             <div class="settings-container">
+                <!-- Fila de Dificultad -->
                 <div class="settings-row">
                     <div class="setting-group difficulty-group">
                         <label for="difficulty">Dificultad</label>
@@ -27,23 +29,26 @@
                             <button data-value="expert">Experto</button>
                         </div>
                     </div>
+                </div>
+                <!-- Cuadrícula de Opciones 2x2 -->
+                <div class="settings-row">
                     <div class="setting-group">
-                        <label>Modo Inverso</label>
-                        <button class="toggle-btn" id="reverse-mode">Desactivado</button>
+                        <label>Inverso</label>
+                        <button class="toggle-btn" id="reverse-mode">OFF</button>
+                    </div>
+                    <div class="setting-group">
+                        <label>Colores</label>
+                        <button class="toggle-btn" id="color-mode">OFF</button>
                     </div>
                 </div>
                 <div class="settings-row">
-                    <div class="setting-group">
-                        <label>Modo Colores</label>
-                        <button class="toggle-btn" id="color-mode">Desactivado</button>
+                     <div class="setting-group">
+                        <label>Uno</label>
+                        <button class="toggle-btn" id="one-by-one-mode">OFF</button>
                     </div>
                     <div class="setting-group">
-                        <label>Uno por Uno</label>
-                        <button class="toggle-btn" id="one-by-one-mode">Desactivado</button>
-                    </div>
-                    <div class="setting-group">
-                        <label>Pantalla Completa</label>
-                        <button class="toggle-btn" id="fullscreen-btn">Activar</button>
+                        <label>Pantalla</label>
+                        <button class="toggle-btn" id="fullscreen-btn">OFF</button>
                     </div>
                 </div>
             </div>
