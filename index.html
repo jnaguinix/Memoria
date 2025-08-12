@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Memoria Numérica</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="game-container">
+        <h1 id="main-title">Memoria Numérica</h1>
+        <div id="settings-area">
+            <div class="settings-container">
+                <div class="settings-row">
+                    <div class="setting-group difficulty-group">
+                        <label for="difficulty">Dificultad</label>
+                        <div class="btn-group" id="difficulty">
+                            <button data-value="easy" class="active">Fácil</button>
+                            <button data-value="hard">Difícil</button>
+                            <button data-value="expert">Experto</button>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <label>Modo Inverso</label>
+                        <button class="toggle-btn" id="reverse-mode">Desactivado</button>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="setting-group">
+                        <label>Modo Colores</label>
+                        <button class="toggle-btn" id="color-mode">Desactivado</button>
+                    </div>
+                    <div class="setting-group">
+                        <label>Uno por Uno</label>
+                        <button class="toggle-btn" id="one-by-one-mode">Desactivado</button>
+                    </div>
+                    <div class="setting-group">
+                        <label>Pantalla Completa</label>
+                        <button class="toggle-btn" id="fullscreen-btn">Activar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="start-btn" id="start-btn">Comenzar Juego</button>
+        
+        <div class="game-info" style="display: none;">
+            <div class="lives-container" id="lives-container"></div>
+            <div class="actions-container">
+                <button id="replay-btn" title="Cuesta 1 vida">Re-ver</button>
+                <button id="hint-btn">Pista (x<span id="hint-counter">0</span>)</button>
+            </div>
+        </div>
+
+        <div class="display-area" id="display-area" style="display: none;">
+            <div class="sequence-display" id="sequence-display"></div>
+        </div>
+        
+        <div class="timer-container" id="timer-container">
+            <div class="timer-bar" id="timer-bar"></div>
+        </div>
+
+        <div id="input-area" style="display: none;">
+            <div id="player-sequence-display">&nbsp;</div>
+            <div id="keypad"></div>
+        </div>
+        
+        <div class="feedback" id="feedback" style="display: none;"></div>
+
+        <div class="stats" id="stats-container" style="display: none;">
+            <p>Racha: <span id="streak-counter">0</span></p>
+            <p>Puntaje Máx: <span id="max-score-counter">0</span></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
