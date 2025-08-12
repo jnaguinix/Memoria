@@ -24,9 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
         replayBtn: document.getElementById('replay-btn'),
         hintBtn: document.getElementById('hint-btn'),
         hintCounter: document.getElementById('hint-counter'),
+        restartBtn: document.getElementById('restart-btn'),
     };
 
     const HIGH_SCORE_KEY = 'numericMemoryHighScore';
+    
+    let sounds = {};
 
     const gameState = {
         difficulty: 'easy',
@@ -52,30 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
         expert: { length: 15, time: 5000, inputTime: 30000 },
     };
     
-    const sounds = {
-        mainSynth: new Tone.Synth().toDestination(),
-        keypadSynth: new Tone.Synth().toDestination(),
-        hintSynth: new Tone.PolySynth(Tone.Synth).toDestination(),
-
-        success: () => sounds.mainSynth.triggerAttackRelease("C5", "8n", Tone.now()),
-        error: () => sounds.mainSynth.triggerAttackRelease("C3", "8n", Tone.now()),
-        start: () => {
-            const now = Tone.now();
-            sounds.mainSynth.triggerAttackRelease("C4", "8n", now);
-            sounds.mainSynth.triggerAttackRelease("G4", "8n", now + 0.2);
-        },
-        keypad: (note) => sounds.keypadSynth.triggerAttackRelease(note, "16n"),
-        backspace: () => sounds.keypadSynth.triggerAttackRelease("C3", "16n"),
-        loseLife: () => sounds.mainSynth.triggerAttackRelease("E3", "8n", Tone.now()),
-        gainHint: () => {
-            const now = Tone.now();
-            sounds.hintSynth.triggerAttackRelease("A5", "16n", now);
-            sounds.hintSynth.triggerAttackRelease("E6", "16n", now + 0.1);
-        },
-        useHint: () => sounds.mainSynth.triggerAttackRelease("G5", "8n", Tone.now()),
-        replay: () => sounds.mainSynth.triggerAttackRelease("A3", "8n", Tone.now()),
-    };
-
     function setupEventListeners() {
         elements.difficultyBtns.forEach(btn => btn.addEventListener('click', () => {
             if (gameState.gameInProgress) return;
@@ -95,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupToggleButton(elements.colorModeBtn, 'colorMode');
         setupToggleButton(elements.oneByOneModeBtn, 'oneByOneMode');
         
-        elements.startBtn.addEventListener('click', () => {
+        elements.startBtn.addEventListener('click', async () => {
             if (gameState.gameInProgress) return;
             
             gameState.lives = gameState.initialLives;
@@ -103,12 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.hints = 0;
             updateStats();
 
-            startGame();
+            await startGame();
         });
 
         elements.keypad.addEventListener('click', handleKeypadClick);
         elements.hintBtn.addEventListener('click', useHint);
         elements.replayBtn.addEventListener('click', handleReplayRequest);
+        elements.restartBtn.addEventListener('click', resetToPreGame);
         
         elements.displayArea.addEventListener('click', () => {
             if (!gameState.gameInProgress && elements.displayArea.classList.contains('game-over')) {
@@ -160,12 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.gameInfo.style.display = 'flex';
             elements.statsContainer.style.display = 'flex';
             elements.feedbackEl.style.display = 'block';
+        } else if (view === 'game-over') {
+            elements.displayArea.style.display = 'flex';
+            elements.statsContainer.style.display = 'flex';
         }
     }
 
     function resetToPreGame() {
+        clearTimeout(gameState.inputTimerId);
+        gameState.gameInProgress = false; 
         showView('pre-game');
         elements.displayArea.classList.remove('game-over');
+        elements.sequenceDisplay.innerHTML = '';
         
         gameState.lives = gameState.initialLives;
         gameState.streak = 0;
@@ -173,7 +159,32 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
     }
 
-    function startGame() {
+    async function startGame() {
+        await Tone.start();
+        
+        sounds = {
+            mainSynth: new Tone.Synth().toDestination(),
+            keypadSynth: new Tone.Synth().toDestination(),
+            hintSynth: new Tone.PolySynth(Tone.Synth).toDestination(),
+            success: () => sounds.mainSynth.triggerAttackRelease("C5", "8n", Tone.now()),
+            error: () => sounds.mainSynth.triggerAttackRelease("C3", "8n", Tone.now()),
+            start: () => {
+                const now = Tone.now();
+                sounds.mainSynth.triggerAttackRelease("C4", "8n", now);
+                sounds.mainSynth.triggerAttackRelease("G4", "8n", now + 0.2);
+            },
+            keypad: (note) => sounds.keypadSynth.triggerAttackRelease(note, "16n"),
+            backspace: () => sounds.keypadSynth.triggerAttackRelease("C3", "16n"),
+            loseLife: () => sounds.mainSynth.triggerAttackRelease("E3", "8n", Tone.now()),
+            gainHint: () => {
+                const now = Tone.now();
+                sounds.hintSynth.triggerAttackRelease("A5", "16n", now);
+                sounds.hintSynth.triggerAttackRelease("E6", "16n", now + 0.1);
+            },
+            useHint: () => sounds.mainSynth.triggerAttackRelease("G5", "8n", Tone.now()),
+            replay: () => sounds.mainSynth.triggerAttackRelease("A3", "8n", Tone.now()),
+        };
+
         gameState.gameInProgress = true;
         sounds.start();
         
@@ -212,6 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function hideSequence() {
+        // CORRECCIÓN: Añadir guarda para evitar que se ejecute si el juego ha terminado.
+        if (!gameState.gameInProgress) return;
+
         elements.displayArea.style.display = 'none';
         elements.inputArea.style.display = 'block';
         elements.feedbackEl.textContent = gameState.reverseMode ? 'Introduce la secuencia en orden INVERSO.' : 'Introduce la secuencia.';
@@ -231,11 +245,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (key) {
             const num = parseInt(key, 10);
-            sounds.keypad(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5'][num]);
+            if (sounds.keypad) sounds.keypad(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5'][num]);
             gameState.playerSequence.push(num);
             updatePlayerSequenceDisplay();
         } else if (action === 'backspace') {
-            sounds.backspace();
+            if (sounds.backspace) sounds.backspace();
             gameState.playerSequence.pop();
             updatePlayerSequenceDisplay();
         }
@@ -255,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleCorrectAnswer() {
-        sounds.success();
+        if (sounds.success) sounds.success();
         gameState.streak++;
         if (gameState.streak > gameState.maxScore) {
             gameState.maxScore = gameState.streak;
@@ -263,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (gameState.streak > 0 && gameState.streak % 5 === 0) {
             gameState.hints++;
+            if(sounds.gainHint) sounds.gainHint();
         }
         updateStats();
         elements.feedbackEl.textContent = '¡Correcto!';
@@ -270,6 +285,8 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.playerSequenceDisplay.style.backgroundColor = 'var(--success-color)';
         
         setTimeout(() => {
+            // CORRECCIÓN: Añadir guarda para evitar que se ejecute si el juego ha terminado.
+            if (!gameState.gameInProgress) return;
             elements.playerSequenceDisplay.style.backgroundColor = 'var(--bg-color)';
             startGame();
         }, 1200);
@@ -284,25 +301,29 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => elements.playerSequenceDisplay.classList.remove('shake'), 500);
 
         if (gameState.lives > 0) {
-            sounds.loseLife();
+            if (sounds.loseLife) sounds.loseLife();
             const livesText = gameState.lives === 1 ? '1 vida' : `${gameState.lives} vidas`;
             elements.feedbackEl.textContent = isTimeout 
                 ? `¡Se acabó el tiempo! Te quedan ${livesText}.`
                 : `Incorrecto. Te quedan ${livesText}. ¡Inténtalo de nuevo!`;
             elements.feedbackEl.className = 'feedback error';
+            
             setTimeout(() => {
+                // CORRECCIÓN: Añadir guarda para evitar que se ejecute si el juego ha terminado.
+                if (!gameState.gameInProgress) return;
                 gameState.playerSequence = [];
                 updatePlayerSequenceDisplay();
                 elements.playerSequenceDisplay.style.backgroundColor = 'var(--bg-color)';
-            }, 1200);
+                hideSequence();
+            }, 1500);
+
         } else {
-            sounds.error();
+            if (sounds.error) sounds.error();
             const correctSequence = (gameState.reverseMode ? [...gameState.currentSequence].reverse() : gameState.currentSequence).join(' ');
             
             gameState.gameInProgress = false;
             
             showView('game-over');
-            elements.displayArea.style.display = 'flex';
             elements.displayArea.classList.add('game-over');
             const reason = isTimeout ? 'Se acabó el tiempo' : 'Fin del juego';
             elements.sequenceDisplay.innerHTML = `${reason} <br><small style="font-size: 1rem;">La secuencia era: ${correctSequence}</small><br><small style="font-size: 0.8rem; opacity: 0.7;">Haz clic para reiniciar</small>`;
@@ -312,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function useHint() {
         if(gameState.hints <= 0 || !gameState.gameInProgress || gameState.playerSequence.length >= gameState.currentSequence.length) return;
         
-        sounds.useHint();
+        if (sounds.useHint) sounds.useHint();
         gameState.hints--;
         updateStats();
         
@@ -333,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(gameState.inputTimerId);
         gameState.lives--;
         updateLivesDisplay();
-        sounds.replay();
+        if (sounds.replay) sounds.replay();
 
         elements.inputArea.style.display = 'none';
         elements.displayArea.style.display = 'flex';
@@ -397,7 +418,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function updatePlayerSequenceDisplay() { elements.playerSequenceDisplay.textContent = gameState.playerSequence.join(' ') || '...'; }
+    function updatePlayerSequenceDisplay() { 
+        if (gameState.playerSequence.length > 0) {
+            elements.playerSequenceDisplay.textContent = gameState.playerSequence.join(' ');
+        } else {
+            elements.playerSequenceDisplay.textContent = '...';
+        }
+    }
    
     function startTimer(duration) {
         elements.timerContainer.style.display = 'block';
@@ -409,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.timerBar.style.transform = 'scaleX(0)';
     }
     function displayAllAtOnce() {
-        const sequenceHTML = gameState.currentSequence.map(num => `<span style="color: ${gameState.colorMode ? getRandomColor() : 'var(--text-color)'};">${num}</span>`).join('');
+        const sequenceHTML = gameState.currentSequence.map(num => `<span style="color: ${gameState.colorMode ? getRandomColor() : 'var(--text-color)'};">${num}</span>`).join(' ');
         elements.sequenceDisplay.innerHTML = sequenceHTML;
     }
     function displayOneByOne() {
@@ -418,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const interval = setInterval(() => {
             if (i < gameState.currentSequence.length) {
                 const num = gameState.currentSequence[i];
-                elements.sequenceDisplay.innerHTML = `<span style="color: ${gameState.colorMode ? getRandomColor() : 'var(--text-color)'};">${num}</span>`;
+                elements.sequenceDisplay.innerHTML = `<span style="color: ${gameState.colorMode ? getRandomColor() : 'var(--text-color)'};" class="one-by-one-char">${num}</span>`;
                 i++;
             } else {
                 clearInterval(interval);
