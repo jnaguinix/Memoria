@@ -185,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showView('game');
         elements.gameArea.classList.remove('game-over');
         elements.sequenceDisplay.style.display = 'flex';
-        elements.timerContainer.style.display = 'block';
         elements.statsContainer.style.display = 'flex';
         elements.feedbackEl.style.display = 'block';
         
@@ -217,11 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.feedbackEl.textContent = 'Memoriza...';
         elements.feedbackEl.className = 'feedback info';
         
-        if (gameState.oneByOneMode) displayOneByOne();
-        else displayAllAtOnce();
-        
-        startTimer(gameState.displayTime);
-        setTimeout(hideSequence, gameState.displayTime);
+        if (gameState.oneByOneMode) {
+            elements.timerContainer.style.display = 'none'; // Ocultar barra de tiempo
+            displayOneByOne();
+        } else {
+            elements.timerContainer.style.display = 'block'; // Mostrar barra de tiempo
+            displayAllAtOnce();
+            startTimer(gameState.displayTime);
+            setTimeout(hideSequence, gameState.displayTime);
+        }
     }
     
     function hideSequence() {
@@ -461,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displayOneByOne() {
         let i = 0;
-        const intervalTime = Math.min(800, gameState.displayTime / gameState.sequenceLength);
+        const intervalTime = 800; // Un tiempo fijo para mostrar cada número
         
         elements.sequenceDisplay.innerHTML = ''; // Limpiar al inicio
 
@@ -485,8 +488,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 i++;
             } else {
-                elements.sequenceDisplay.innerHTML = ''; // Limpiar al final
                 clearInterval(oneByOneInterval);
+                // Pasar a la fase de introducción después de un breve momento
+                setTimeout(hideSequence, intervalTime / 2);
             }
         }, intervalTime);
     }
