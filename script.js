@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         displayTime: 5000,
         inputTimerId: null,
         oneByOneTimeoutId: null,
+        displayTimeoutId: null, // Para controlar el timer de visualización
         streak: 0,
         maxScore: 0,
         gameInProgress: false,
@@ -176,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.submitScoreBtn.addEventListener('click', async () => {
             const initials = elements.playerInitialsInput.value;
-            if (initials.length > 0 && initials.length <= 6) { // Lógica actualizada
+            if (initials.length > 0 && initials.length <= 6) {
                 await saveScore(initials, gameState.streak);
                 hideNameModal();
                 resetToPreGame();
@@ -216,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(gameState.inputTimerId);
         clearInterval(oneByOneInterval);
         clearTimeout(gameState.oneByOneTimeoutId);
+        clearTimeout(gameState.displayTimeoutId); // Limpiar timer de visualización
         gameState.gameInProgress = false; 
         showView('pre-game');
         elements.gameArea.classList.remove('game-over');
@@ -286,6 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function displaySequence() {
         clearInterval(oneByOneInterval);
         clearTimeout(gameState.oneByOneTimeoutId);
+        clearTimeout(gameState.displayTimeoutId); // Limpiar cualquier timer anterior
         elements.inputArea.style.display = 'none';
         elements.sequenceDisplay.style.display = 'flex';
         elements.sequenceDisplay.innerHTML = '';
@@ -299,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.timerContainer.style.display = 'block';
             displayAllAtOnce();
             startTimer(gameState.displayTime);
-            setTimeout(hideSequence, gameState.displayTime);
+            gameState.displayTimeoutId = setTimeout(hideSequence, gameState.displayTime);
         }
     }
     
