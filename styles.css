@@ -4,6 +4,7 @@
 */
 
 :root {
+    /* Paleta de colores inspirada en NES */
     --bg-color: #1a1a2d;
     --surface-color: #2d2d4d;
     --primary-color: #ffc800; /* Amarillo brillante */
@@ -134,6 +135,8 @@ button:disabled:active {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* Permite que los elementos se reordenen */
+    gap: 1rem; /* Espacio entre vidas y botones cuando se apilan */
 }
 
 .lives-container {
@@ -301,4 +304,17 @@ button:disabled:active {
 }
 @keyframes blink {
     50% { opacity: 0.5; }
+}
+
+/* SOLUCIÓN: Media Query para pantallas pequeñas */
+@media (max-width: 400px) {
+    .top-bar {
+        flex-direction: column; /* Apila los elementos verticalmente */
+        align-items: center; /* Centra los elementos */
+    }
+
+    .actions-container {
+        justify-content: center; /* Centra los botones */
+        width: 100%;
+    }
 }
