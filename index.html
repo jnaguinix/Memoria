@@ -54,6 +54,13 @@
                 </div>
             </div>
             <button class="start-btn" id="start-btn">Comenzar Juego</button>
+            
+            <div id="leaderboard" class="leaderboard-container">
+                <h2>Mejores Puntajes</h2>
+                <table id="leaderboard-table">
+                    <!-- Las filas se llenarán con JavaScript -->
+                </table>
+            </div>
         </div>
         
         <!-- Pantalla de Juego -->
@@ -87,6 +94,35 @@
         </div>
     </div>
 
+    <!-- Modal para ingresar nombre -->
+    <div id="name-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>Nuevo Récord</h2>
+            <p>Ingresa tu nombre (hasta 6 letras)</p>
+            <input type="text" id="player-initials" maxlength="6" autocomplete="off">
+            <button id="submit-score-btn">Guardar</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const firebaseConfig = {
+          apiKey: "AIzaSyBEADy_KlQzGwv1GKCFDE005SPBq4g1p4Q",
+          authDomain: "memonumerojuego.firebaseapp.com",
+          projectId: "memonumerojuego",
+          storageBucket: "memonumerojuego.appspot.com",
+          messagingSenderId: "769112311028",
+          appId: "1:769112311028:web:3ad7cf97968ecd288a8aa1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.firebase = { db, collection, addDoc, getDocs, query, orderBy, limit };
+    </script>
     <script src="script.js"></script>
 </body>
 </html>

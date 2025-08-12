@@ -25,6 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
         replayBtn: document.getElementById('replay-btn'),
         hintBtn: document.getElementById('hint-btn'),
         restartBtn: document.getElementById('restart-btn'),
+        leaderboardTable: document.getElementById('leaderboard-table'),
+        nameModal: document.getElementById('name-modal'),
+        playerInitialsInput: document.getElementById('player-initials'),
+        submitScoreBtn: document.getElementById('submit-score-btn'),
     };
 
     const HIGH_SCORE_KEY = 'numericMemoryHighScore';
@@ -42,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sequenceLength: 6,
         displayTime: 5000,
         inputTimerId: null,
-        oneByOneTimeoutId: null, // Para controlar el timer del modo Uno a Uno
+        oneByOneTimeoutId: null,
         streak: 0,
         maxScore: 0,
         gameInProgress: false,
@@ -57,6 +61,65 @@ document.addEventListener('DOMContentLoaded', () => {
         expert: { length: 15, time: 12000, inputTime: 30000 },
     };
     
+    // --- Lógica de Firebase ---
+
+    async function saveScore(initials, score) {
+        if (!window.firebase) return;
+        try {
+            await window.firebase.addDoc(window.firebase.collection(window.firebase.db, "highscores"), {
+                initials: initials.toUpperCase(),
+                score: score,
+                timestamp: new Date()
+            });
+            await fetchHighScores(); // Actualizar la tabla
+        } catch (e) {
+            console.error("Error adding document: ", e);
+        }
+    }
+
+    async function fetchHighScores() {
+        if (!window.firebase) {
+            elements.leaderboardTable.innerHTML = "<tr><td>DB no conectada</td></tr>";
+            return;
+        }
+        const q = window.firebase.query(
+            window.firebase.collection(window.firebase.db, "highscores"),
+            window.firebase.orderBy("score", "desc"),
+            window.firebase.limit(10)
+        );
+
+        try {
+            const querySnapshot = await window.firebase.getDocs(q);
+            elements.leaderboardTable.innerHTML = ""; // Limpiar tabla
+            let rank = 1;
+            if (querySnapshot.empty) {
+                elements.leaderboardTable.innerHTML = "<tr><td>Aún no hay puntajes</td></tr>";
+            } else {
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = elements.leaderboardTable.insertRow();
+                    row.innerHTML = `<td>${rank}.</td><td>${data.initials}</td><td>${data.score}</td>`;
+                    rank++;
+                });
+            }
+        } catch(e) {
+            console.error("Error fetching scores: ", e);
+            elements.leaderboardTable.innerHTML = "<tr><td>Error al cargar</td></tr>";
+        }
+    }
+
+    function showNameModal() {
+        elements.nameModal.style.display = 'flex';
+        elements.playerInitialsInput.focus();
+    }
+
+    function hideNameModal() {
+        elements.nameModal.style.display = 'none';
+        elements.playerInitialsInput.value = '';
+    }
+
+    // --- Fin Lógica de Firebase ---
+
     function updateToggleButtonVisuals(button, isActive) {
         button.textContent = isActive ? 'ON' : 'OFF';
         button.classList.remove('on', 'off');
@@ -110,6 +173,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
         document.addEventListener('mozfullscreenchange', updateFullscreenButton);
         document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+
+        elements.submitScoreBtn.addEventListener('click', async () => {
+            const initials = elements.playerInitialsInput.value;
+            if (initials.length > 0 && initials.length <= 6) { // Lógica actualizada
+                await saveScore(initials, gameState.streak);
+                hideNameModal();
+                resetToPreGame();
+            }
+        });
     }
     
     function createKeypad() {
@@ -143,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetToPreGame() {
         clearTimeout(gameState.inputTimerId);
         clearInterval(oneByOneInterval);
-        clearTimeout(gameState.oneByOneTimeoutId); // Limpiar timer
+        clearTimeout(gameState.oneByOneTimeoutId);
         gameState.gameInProgress = false; 
         showView('pre-game');
         elements.gameArea.classList.remove('game-over');
@@ -153,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.streak = 0;
         gameState.hints = 0;
         updateStats();
+        fetchHighScores();
     }
 
     async function startGame() {
@@ -212,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displaySequence() {
         clearInterval(oneByOneInterval);
-        clearTimeout(gameState.oneByOneTimeoutId); // Limpiar timer
+        clearTimeout(gameState.oneByOneTimeoutId);
         elements.inputArea.style.display = 'none';
         elements.sequenceDisplay.style.display = 'flex';
         elements.sequenceDisplay.innerHTML = '';
@@ -283,10 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.maxScore = gameState.streak;
             saveMaxScore();
         }
-        if (gameState.streak > 0 && gameState.streak % 5 === 0) {
-            gameState.hints++;
-            if(sounds.gainHint) sounds.gainHint();
-        }
         updateStats();
         elements.feedbackEl.textContent = '¡Correcto!';
         elements.feedbackEl.className = 'feedback success';
@@ -325,25 +394,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } else {
             if (sounds.error) sounds.error();
-            const correctSequence = (gameState.reverseMode ? [...gameState.currentSequence].reverse() : gameState.currentSequence).join(' ');
-            
             gameState.gameInProgress = false;
             
-            elements.sequenceDisplay.style.display = 'flex';
-            elements.inputArea.style.display = 'none';
-            elements.timerContainer.style.display = 'none';
-            elements.statsContainer.style.display = 'none';
-            elements.feedbackEl.style.display = 'none';
-            elements.gameArea.classList.add('game-over');
-            
-            elements.sequenceDisplay.innerHTML = `
-                <div class="game-over-text">
-                    <div class="game-over-title">Game Over</div>
-                    <div class="game-over-subtitle">Secuencia correcta:</div>
-                    <div class="game-over-sequence">${correctSequence}</div>
-                    <div class="game-over-restart">Reiniciar</div>
-                </div>
-            `;
+            if (gameState.streak > 0) {
+                 showNameModal();
+            } else {
+                const correctSequence = (gameState.reverseMode ? [...gameState.currentSequence].reverse() : gameState.currentSequence).join(' ');
+                elements.sequenceDisplay.style.display = 'flex';
+                elements.inputArea.style.display = 'none';
+                elements.timerContainer.style.display = 'none';
+                elements.statsContainer.style.display = 'none';
+                elements.feedbackEl.style.display = 'none';
+                elements.gameArea.classList.add('game-over');
+                elements.sequenceDisplay.innerHTML = `
+                    <div class="game-over-text">
+                        <div class="game-over-title">Game Over</div>
+                        <div class="game-over-subtitle">Secuencia correcta:</div>
+                        <div class="game-over-sequence">${correctSequence}</div>
+                        <div class="game-over-restart">Reiniciar</div>
+                    </div>
+                `;
+            }
         }
     }
     
