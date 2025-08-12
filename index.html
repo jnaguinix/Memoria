@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono:wght@700&family=VT323&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
 
@@ -16,72 +16,74 @@
 <body>
 
     <div class="game-container">
-        <h1 id="main-title">MemoNumero</h1>
-        <div id="settings-area">
-            <div class="settings-container">
-                <!-- Fila de Dificultad -->
-                <div class="settings-row">
-                    <div class="setting-group difficulty-group">
-                        <label for="difficulty">Dificultad</label>
-                        <div class="btn-group" id="difficulty">
-                            <button data-value="easy" class="active">Fácil</button>
-                            <button data-value="hard">Difícil</button>
-                            <button data-value="expert">Experto</button>
+        <!-- Pantalla de Menú -->
+        <div class="menu-area">
+            <h1 id="main-title">MemoNumero</h1>
+            <div id="settings-area">
+                <div class="settings-container">
+                    <div class="settings-row">
+                        <div class="setting-group difficulty-group">
+                            <label for="difficulty">Dificultad</label>
+                            <div class="btn-group" id="difficulty">
+                                <button data-value="easy" class="active">Fácil</button>
+                                <button data-value="hard">Difícil</button>
+                                <button data-value="expert">Experto</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="setting-group">
+                            <label>Inverso</label>
+                            <button class="toggle-btn" id="reverse-mode">OFF</button>
+                        </div>
+                        <div class="setting-group">
+                            <label>Colores</label>
+                            <button class="toggle-btn" id="color-mode">OFF</button>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                         <div class="setting-group">
+                            <label>Uno</label>
+                            <button class="toggle-btn" id="one-by-one-mode">OFF</button>
+                        </div>
+                        <div class="setting-group">
+                            <label>Pantalla</label>
+                            <button class="toggle-btn" id="fullscreen-btn">OFF</button>
                         </div>
                     </div>
                 </div>
-                <!-- Cuadrícula de Opciones 2x2 -->
-                <div class="settings-row">
-                    <div class="setting-group">
-                        <label>Inverso</label>
-                        <button class="toggle-btn" id="reverse-mode">OFF</button>
-                    </div>
-                    <div class="setting-group">
-                        <label>Colores</label>
-                        <button class="toggle-btn" id="color-mode">OFF</button>
-                    </div>
-                </div>
-                <div class="settings-row">
-                     <div class="setting-group">
-                        <label>Uno</label>
-                        <button class="toggle-btn" id="one-by-one-mode">OFF</button>
-                    </div>
-                    <div class="setting-group">
-                        <label>Pantalla</label>
-                        <button class="toggle-btn" id="fullscreen-btn">OFF</button>
-                    </div>
-                </div>
             </div>
+            <button class="start-btn" id="start-btn">Comenzar Juego</button>
         </div>
-        <button class="start-btn" id="start-btn">Comenzar Juego</button>
         
-        <div class="game-info" style="display: none;">
-            <div class="lives-container" id="lives-container"></div>
-            <div class="actions-container">
-                <button id="replay-btn" title="Cuesta 1 vida">Re-ver</button>
-                <button id="hint-btn">Pista (x<span id="hint-counter">0</span>)</button>
-                <button id="restart-btn">Reiniciar</button>
+        <!-- Pantalla de Juego -->
+        <div class="game-area" style="display: none;">
+            <div class="top-bar">
+                <div class="lives-container" id="lives-container"></div>
+                <div class="actions-container">
+                    <button id="replay-btn" title="Cuesta 1 vida">Re-ver</button>
+                    <button id="hint-btn">Pista (x0)</button>
+                    <button id="restart-btn">Reiniciar</button>
+                </div>
             </div>
-        </div>
 
-        <div class="display-area" id="display-area" style="display: none;">
             <div class="sequence-display" id="sequence-display"></div>
-        </div>
-        
-        <div class="timer-container" id="timer-container">
-            <div class="timer-bar" id="timer-bar"></div>
-        </div>
+            
+            <div class="timer-container" id="timer-container">
+                <div class="timer-bar" id="timer-bar"></div>
+            </div>
+            
+            <div class="stats-container" id="stats-container">
+                <p>Racha: <span id="streak-counter">0</span></p>
+                <p>Puntaje Máx: <span id="max-score-counter">0</span></p>
+            </div>
 
-        <div id="input-area" style="display: none;">
-            <div id="player-sequence-display">&nbsp;</div>
-            <div id="keypad"></div>
-        </div>
-        
-        <div class="feedback" id="feedback" style="display: none;"></div>
-
-        <div class="stats" id="stats-container" style="display: none;">
-            <p>Racha: <span id="streak-counter">0</span></p>
-            <p>Puntaje Máx: <span id="max-score-counter">0</span></p>
+            <div id="input-area" style="display: none;">
+                <div id="player-sequence-display">&nbsp;</div>
+                <div id="keypad"></div>
+            </div>
+            
+            <div class="feedback" id="feedback"></div>
         </div>
     </div>
 

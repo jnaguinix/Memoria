@@ -2,14 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const elements = {
         mainTitle: document.getElementById('main-title'),
         settingsArea: document.getElementById('settings-area'),
+        menuArea: document.querySelector('.menu-area'),
         difficultyBtns: document.querySelectorAll('#difficulty button'),
         reverseModeBtn: document.getElementById('reverse-mode'),
         colorModeBtn: document.getElementById('color-mode'),
         oneByOneModeBtn: document.getElementById('one-by-one-mode'),
         fullscreenBtn: document.getElementById('fullscreen-btn'),
         startBtn: document.getElementById('start-btn'),
-        gameInfo: document.querySelector('.game-info'),
-        displayArea: document.getElementById('display-area'),
+        gameArea: document.querySelector('.game-area'),
         sequenceDisplay: document.getElementById('sequence-display'),
         timerContainer: document.getElementById('timer-container'),
         timerBar: document.getElementById('timer-bar'),
@@ -21,15 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
         streakCounter: document.getElementById('streak-counter'),
         maxScoreCounter: document.getElementById('max-score-counter'),
         livesContainer: document.getElementById('lives-container'),
+        actionsContainer: document.querySelector('.actions-container'),
         replayBtn: document.getElementById('replay-btn'),
         hintBtn: document.getElementById('hint-btn'),
-        hintCounter: document.getElementById('hint-counter'),
         restartBtn: document.getElementById('restart-btn'),
     };
 
     const HIGH_SCORE_KEY = 'numericMemoryHighScore';
     
     let sounds = {};
+    let oneByOneInterval = null;
 
     const gameState = {
         difficulty: 'easy',
@@ -51,11 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const difficultySettings = {
         easy: { length: 6, time: 5000, inputTime: 10000 },
-        hard: { length: 10, time: 5000, inputTime: 15000 },
-        expert: { length: 15, time: 5000, inputTime: 30000 },
+        hard: { length: 10, time: 10000, inputTime: 15000 },
+        expert: { length: 15, time: 12000, inputTime: 30000 },
     };
     
-    // Función para actualizar el aspecto de los botones ON/OFF
     function updateToggleButtonVisuals(button, isActive) {
         button.textContent = isActive ? 'ON' : 'OFF';
         button.classList.remove('on', 'off');
@@ -98,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.replayBtn.addEventListener('click', handleReplayRequest);
         elements.restartBtn.addEventListener('click', resetToPreGame);
         
-        elements.displayArea.addEventListener('click', () => {
-            if (!gameState.gameInProgress && elements.displayArea.classList.contains('game-over')) {
+        elements.sequenceDisplay.addEventListener('click', () => {
+            if (!gameState.gameInProgress && elements.gameArea.classList.contains('game-over')) {
                 resetToPreGame();
             }
         });
@@ -129,35 +129,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function showView(view) {
-        elements.mainTitle.style.display = 'none';
-        elements.settingsArea.style.display = 'none';
-        elements.startBtn.style.display = 'none';
-        elements.gameInfo.style.display = 'none';
-        elements.displayArea.style.display = 'none';
-        elements.timerContainer.style.display = 'none';
-        elements.inputArea.style.display = 'none';
-        elements.feedbackEl.style.display = 'none';
-        elements.statsContainer.style.display = 'none';
+        elements.menuArea.style.display = 'none';
+        elements.gameArea.style.display = 'none';
 
         if (view === 'pre-game') {
-            elements.mainTitle.style.display = 'block';
-            elements.settingsArea.style.display = 'block';
-            elements.startBtn.style.display = 'block';
+            elements.menuArea.style.display = 'block';
         } else if (view === 'game') {
-            elements.gameInfo.style.display = 'flex';
-            elements.statsContainer.style.display = 'flex';
-            elements.feedbackEl.style.display = 'block';
-        } else if (view === 'game-over') {
-            elements.displayArea.style.display = 'flex';
-            elements.statsContainer.style.display = 'flex';
+            elements.gameArea.style.display = 'flex';
         }
     }
 
     function resetToPreGame() {
         clearTimeout(gameState.inputTimerId);
+        clearInterval(oneByOneInterval);
         gameState.gameInProgress = false; 
         showView('pre-game');
-        elements.displayArea.classList.remove('game-over');
+        elements.gameArea.classList.remove('game-over');
         elements.sequenceDisplay.innerHTML = '';
         
         gameState.lives = gameState.initialLives;
@@ -196,8 +183,11 @@ document.addEventListener('DOMContentLoaded', () => {
         sounds.start();
         
         showView('game');
-        elements.displayArea.style.display = 'flex'; 
-        elements.displayArea.classList.remove('game-over');
+        elements.gameArea.classList.remove('game-over');
+        elements.sequenceDisplay.style.display = 'flex';
+        elements.timerContainer.style.display = 'block';
+        elements.statsContainer.style.display = 'flex';
+        elements.feedbackEl.style.display = 'block';
         
         gameState.playerSequence = [];
         updatePlayerSequenceDisplay();
@@ -216,8 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displaySequence() {
+        clearInterval(oneByOneInterval);
         elements.inputArea.style.display = 'none';
-        elements.displayArea.style.display = 'flex';
+        elements.sequenceDisplay.style.display = 'flex';
         elements.sequenceDisplay.innerHTML = '';
         elements.feedbackEl.textContent = 'Memoriza...';
         elements.feedbackEl.className = 'feedback info';
@@ -232,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function hideSequence() {
         if (!gameState.gameInProgress) return;
 
-        elements.displayArea.style.display = 'none';
+        elements.sequenceDisplay.style.display = 'none';
         elements.inputArea.style.display = 'block';
         elements.feedbackEl.textContent = gameState.reverseMode ? 'Introduce la secuencia en orden INVERSO.' : 'Introduce la secuencia.';
         elements.feedbackEl.className = 'feedback info';
@@ -328,10 +319,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             gameState.gameInProgress = false;
             
-            showView('game-over');
-            elements.displayArea.classList.add('game-over');
-            const reason = isTimeout ? 'Se acabó el tiempo' : 'Fin del juego';
-            elements.sequenceDisplay.innerHTML = `${reason} <br><small style="font-size: 1rem;">La secuencia era: ${correctSequence}</small><br><small style="font-size: 0.8rem; opacity: 0.7;">Haz clic para reiniciar</small>`;
+            elements.sequenceDisplay.style.display = 'flex';
+            elements.inputArea.style.display = 'none';
+            elements.timerContainer.style.display = 'none';
+            elements.statsContainer.style.display = 'none';
+            elements.feedbackEl.style.display = 'none';
+            elements.gameArea.classList.add('game-over');
+            
+            elements.sequenceDisplay.innerHTML = `
+                <div class="game-over-text">
+                    <div class="game-over-title">Game Over</div>
+                    <div class="game-over-subtitle">Secuencia correcta:</div>
+                    <div class="game-over-sequence">${correctSequence}</div>
+                    <div class="game-over-restart">Reiniciar</div>
+                </div>
+            `;
         }
     }
     
@@ -362,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sounds.replay) sounds.replay();
 
         elements.inputArea.style.display = 'none';
-        elements.displayArea.style.display = 'flex';
+        elements.sequenceDisplay.style.display = 'flex';
         displaySequence();
     }
 
@@ -439,25 +441,48 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.timerBar.style.transition = `transform ${duration / 1000}s linear`;
         elements.timerBar.style.transform = 'scaleX(0)';
     }
+
     function displayAllAtOnce() {
-        const sequenceHTML = gameState.currentSequence.map(num => `<span style="color: ${gameState.colorMode ? getRandomColor() : 'var(--text-color)'};">${num}</span>`).join(' ');
+        const sequenceHTML = gameState.currentSequence.map(num => {
+            const color = getRandomColor();
+            const numberColor = gameState.colorMode ? color : 'var(--text-color)';
+            return `
+                <div class="number-box">
+                    <span style="color: ${numberColor};">${num}</span>
+                </div>
+            `;
+        }).join('');
         elements.sequenceDisplay.innerHTML = sequenceHTML;
     }
+
     function displayOneByOne() {
+        const sequenceHTML = gameState.currentSequence.map(num => {
+            const color = getRandomColor();
+            const numberColor = gameState.colorMode ? color : 'var(--text-color)';
+            return `
+                <div class="number-box" style="visibility: hidden;">
+                    <span style="color: ${numberColor};">${num}</span>
+                </div>
+            `;
+        }).join('');
+        elements.sequenceDisplay.innerHTML = sequenceHTML;
+
+        const boxes = elements.sequenceDisplay.querySelectorAll('.number-box');
         let i = 0;
         const intervalTime = Math.min(800, gameState.displayTime / gameState.sequenceLength);
-        const interval = setInterval(() => {
-            if (i < gameState.currentSequence.length) {
-                const num = gameState.currentSequence[i];
-                elements.sequenceDisplay.innerHTML = `<span style="color: ${gameState.colorMode ? getRandomColor() : 'var(--text-color)'};" class="one-by-one-char">${num}</span>`;
+        
+        oneByOneInterval = setInterval(() => {
+            if (i < boxes.length) {
+                boxes[i].style.visibility = 'visible';
                 i++;
             } else {
-                clearInterval(interval);
+                clearInterval(oneByOneInterval);
             }
         }, intervalTime);
     }
+
     function getRandomColor() {
-        const colors = ['#38BDF8', '#FBBF24', '#EC4899', '#818CF8', '#34D399'];
+        const colors = ['#42a8f8', '#ffc800', '#ff004d', '#00e436'];
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
@@ -467,7 +492,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMaxScore(); 
         resetToPreGame();
 
-        // Establecer el estado visual inicial de los botones
         updateToggleButtonVisuals(elements.reverseModeBtn, gameState.reverseMode);
         updateToggleButtonVisuals(elements.colorModeBtn, gameState.colorMode);
         updateToggleButtonVisuals(elements.oneByOneModeBtn, gameState.oneByOneMode);
